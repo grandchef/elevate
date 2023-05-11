@@ -13,12 +13,12 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
 
     - name: Build app for release
-      run: msbuild Elevate\Elevate.vcxproj /t:rebuild /p:configuration=debug /p:platform=win32
+      run: msbuild Elevate\Elevate.vcxproj /t:rebuild /p:configuration=release /p:platform=win32
 
     - uses: actions/upload-artifact@v2
       with:
         name: elevate
-        path: Elevate\Build
+        path: Elevate\bin\x86\release\elevate.exe
 
   publish:
     needs: build
@@ -28,10 +28,10 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: elevate
-          path: Elevate\Build
+          path: Elevate\bin\x86\release\elevate.exe
       - name: Upload the artifacts
         uses: skx/github-action-publish-binaries@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: '*.exe'
+          args: 'Elevate\bin\x86\release\*.exe'
