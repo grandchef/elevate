@@ -28,10 +28,10 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: elevate
-          path: Elevate\bin\x86\release\elevate.exe
+          path: Elevate/bin/x86/release/elevate.exe
       - name: Upload the artifacts
         uses: skx/github-action-publish-binaries@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: 'Elevate\bin\x86\release\*.exe'
+          args: Elevate/bin/x86/release/elevate.exe
