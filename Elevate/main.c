@@ -29,6 +29,7 @@ typedef struct _COMMAND_LINE_ARGS
 {
 	BOOL ShowHelp;
 	BOOL Wait;
+	BOOL Silent;
 	BOOL StartComspec;
 	PCWSTR ApplicationName;
 	PCWSTR CommandLine;
@@ -37,9 +38,12 @@ typedef struct _COMMAND_LINE_ARGS
 INT Launch(
 	__in PCWSTR ApplicationName,
 	__in PCWSTR CommandLine,
-	__in BOOL Wait 
+	__in BOOL Wait,
+	__in BOOL Silent
 	)
 {
+	DWORD code = EXIT_SUCCESS;
+
 	SHELLEXECUTEINFO Shex;
 	ZeroMemory( &Shex, sizeof( SHELLEXECUTEINFO ) );
 	Shex.cbSize = sizeof( SHELLEXECUTEINFO );
@@ -47,7 +51,7 @@ INT Launch(
 	Shex.lpVerb = L"runas";
 	Shex.lpFile = ApplicationName;
 	Shex.lpParameters = CommandLine;
-	Shex.nShow = SW_SHOWNORMAL;
+	Shex.nShow = Silent ? SW_HIDE : SW_SHOWNORMAL;
 
 	if ( ! ShellExecuteEx( &Shex ) )
 	{
@@ -65,9 +69,12 @@ INT Launch(
 	if ( Wait )
 	{
 		WaitForSingleObject( Shex.hProcess, INFINITE );
+		if (GetExitCodeProcess( Shex.hProcess, &code ) == 0) {
+			return EXIT_FAILURE;
+		}
 	}
 	CloseHandle( Shex.hProcess );
-	return EXIT_SUCCESS;
+	return code;
 }
 
 INT DispatchCommand(
@@ -86,6 +93,7 @@ INT DispatchCommand(
 			L"Usage: Elevate [-?|-wait|-k] prog [args]\n"
 			L"-?    - Shows this help\n"
 			L"-wait - Waits until prog terminates\n"
+			L"-q    - Silent, don't show windows\n"
 			L"-k    - Starts the the %%COMSPEC%% environment variable value and\n"
 			L"		executes prog in it (CMD.EXE, 4NT.EXE, etc.)\n"
 			L"prog  - The program to execute\n"
@@ -122,7 +130,7 @@ INT DispatchCommand(
 	}
 
 	//wprintf( L"App: %s,\nCmd: %s\n", Args->ApplicationName, Args->CommandLine );
-	return Launch( Args->ApplicationName, Args->CommandLine, Args->Wait );
+	return Launch( Args->ApplicationName, Args->CommandLine, Args->Wait, Args->Silent );
 }
 
 int __cdecl wmain(
@@ -145,7 +153,7 @@ int __cdecl wmain(
 	//
 	// Check OS version
 	//
-	if ( GetVersionEx( &OsVer ) &&
+	if ( GetVersionExW( &OsVer ) &&
 		OsVer.dwMajorVersion < 6 )
 	{
 		fwprintf( stderr, L"This tool is for Windows Vista and above only.\n" );
@@ -172,6 +180,10 @@ int __cdecl wmain(
 			else if ( 0 == _wcsicmp( FlagName, L"k" ) )
 			{
 				Args.StartComspec = TRUE;
+			}
+			else if (0 == _wcsicmp(FlagName, L"q"))
+			{
+				Args.Silent = TRUE;
 			}
 			else
 			{
@@ -208,11 +220,13 @@ int __cdecl wmain(
 	wprintf( 
 		L"ShowHelp:        %s\n"
 		L"Wait:            %s\n"
+		L"Silent:          %s\n"
 		L"StartComspec:    %s\n"
 		L"ApplicationName: %s\n"
 		L"CommandLine:     %s\n",
 		Args.ShowHelp	  ? L"Y" : L"N",
 		Args.Wait		  ?	L"Y" : L"N",
+		Args.Silent       ? L"Y" : L"N",
 		Args.StartComspec ? L"Y" : L"N",
 		Args.ApplicationName,
 		Args.CommandLine );
