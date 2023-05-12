@@ -34,5 +34,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          releaseId: ${{ needs.create_release.outputs.id }}
+          releaseId: ${{ github.ref_name }}
           args: Elevate/bin/x86/release/elevate.exe
